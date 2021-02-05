@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Editor colaborativo</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
+    />
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="src/ace.js"></script>
+	<script src="src/ext-language_tools.js"></script>
+    <link href="quill.snow.css" rel="stylesheet" />
+        <style>
+    	html, body {width: 1920px;background-color:#FFF}
+	aside {width: 340px;height:1122px;float:left;background-color:#F6F6F6}
+	div.conte{float:left;width:330px;margin:10px auto;}
+	div.conte p{text-align:center;font-weight:bold;}
+	div.ct-inp input{width:300px;text-align:center;margin:5px 15px;}
+	aside form, input{width:300px;text-align:center;margin:10px auto}
+  section {width: 1580px;height:1080px;float:left;background-color:#FFF;}
+  #editor{width: 840px;float: left;margin:0;}
+  .ql-editor{width:840px;height: 1080px;}
+  .ql-toolbar{width: 840px;}
+	#aut_editor{width:738px;height:1120px;background-color:#F6F6F6;float:left;border:1px solid gray;margin:0;}
+    </style>
+
+     <script src="src/ini.js"></script>
+     </script>
+  </head>
+
+  <body>
+  <aside>
+	<div class="conte">
+	  <p>Subir archivo</p>
+		<form action='http://localhost:8080/upload' method="POST" enctype="multipart/form-data">
+        	<input type="file" name="file">
+        	<input type="submit" value="Subir">
+		</form>
+	</div>
+	<div class="conte ct-inp">
+	<p>Leer archivo</p>
+          <input type="file" id="fileInput" multiple onchange="showname()"/>
+          <input type='button' id='btn_reader' value='Leer' onclick='readFileName();'>
+	</div>
+	<div class="conte ct-inp">
+	<p>Guardar / Bloquear</p>
+          <input type="submit" id="btn" value="Guardar">
+          <input type="button" id="btn_locker" value="Lock" onclick="addRemoveAttr();">
+	</div>
+</aside>
+
+
+<section>
+  <div class="bx">
+
+    <div id="editor"></div>
+    <script src="dist/bundle.js"></script>
+    <TEXTAREA id="inputexteditor"></TEXTAREA>
+    <div >
+			<pre id="aut_editor"></pre>
+		</div>
+  </div>
+</section>
+<script type="text/javascript">
+
+      //ACE.JS//
+function triggerEvent(el, eventName, options) {
+  var event;
+  if (window.CustomEvent) {
+    event = new CustomEvent(eventName, options);
+  } else {
+    event = document.createEvent('CustomEvent');
+    event.initCustomEvent(eventName, true, true, options);
+  }
+  el.dispatchEvent(event);
+}
+
+/*
+  var dl = document.getElementsByClassName("ql-editor");
+  
+    ace.require("ace/ext/language_tools");
+    var editor = ace.edit("aut_editor");
+  
+  editor.getSession().setValue( dl.value );
+  
+    editor.session.setMode("ace/mode/cssv");
+    editor.setTheme("ace/theme/tomorrow");
+    // enable autocompletion and snippets
+  
+  
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true,
+    useWorker: false
+    });
+  editor.getSession().on( 'change' , function( e ) {
+    dl.value = editor.getSession().getValue() ;
+    triggerEvent(dl, 'change', {
+        detail: 'Display on trigger...'
+    });
+*/
+
+    var dl = document.getElementById("inputexteditor");
+  
+    ace.require("ace/ext/language_tools");
+    var editor = ace.edit("aut_editor");
+  
+  editor.getSession().setValue( dl.value );
+  
+    editor.session.setMode("ace/mode/cssv");
+    editor.setTheme("ace/theme/tomorrow");
+    // enable autocompletion and snippets
+  
+  
+    editor.setOptions({
+        enableBasicAutocompletion: true,
+        enableSnippets: true,
+        enableLiveAutocompletion: true,
+    useWorker: false
+    });
+  editor.getSession().on( 'change' , function( e ) {
+    dl.value = editor.getSession().getValue() ;
+    triggerEvent(dl, 'change', {
+        detail: 'Display on trigger...'
+    });
+    
+    //dl.val( editor.getSession().getValue() ).trigger( 'change' );
+  });
+    
+ 
+
+
+
+  console.log(window);
+/* Leer documento y meter el FileName dentro de un Item*/
+function showname () {
+      /*var name = document.getElementById('fileInput').files[0]; 
+      console.log(name.files.item(0).name);*/
+    var fileName = document.getElementById("fileInput");
+    var files = fileName.files;
+    var file
+    // loop through files
+    for (var i = 0; i < files.length; i++) {
+        // get item
+        file = files.item(i);
+        //or
+        file = files[i];
+        return file.name;
+    }
+}
+
+      //FIN DE ACE.JS //
+    
+/* Leer documento y meter el FileName dentro de un Item*/
+/***************************************************************************************************************************/
+/* Leer documento */
+
+/* Leer el documento, y posteriormente cargar el archivo predefinido */
+function readFileName(){
+  /*POST name*/
+  $.ajax({
+  	url: "/rdata",
+  	data:{fileName:showname()},
+    type:'GET',
+    dataType: "json",
+  }).done(function(success){ 
+      $(".ql-editor").text(success.contents);
+      console.log('Ha funcionado');
+  }).fail(e=>{
+      console.log(e);
+  });
+
+}
+/***************************************************************************************************************************/    
+/* incorporar el texto editado dentro del doc predefinido */
+$("#btn").click(function(){
+    var myText = $(".ql-editor").html();
+    alert('Guardar');
+    var url ="./save";
+
+    $.ajax({
+    url: "/save",
+    data:{myText : myText, fileName:showname()}, dataType: "POST"
+    }).done(function(dat) {
+    $(".ql-editor").html(dat)
+    })
+  });
+/* incorporar el texto editado dentro del doc predefinido */
+
+/* Leer el documento, y posteriormente cargar el archivo predefinido */
+/*************************************************************** LOCK *******************************************************/
+function addRemoveAttr(){
+  document.querySelectorAll('.ql-editor').forEach((item, i) => {
+    var contenteditable = item.contentEditable;
+    var myElement = document.querySelectorAll(".ql-editor");
+
+    if(contenteditable == 'inherit' || contenteditable == 'false'){
+      item.contentEditable = true;
+      for (let i = 0; i < myElement.length; i++) {
+	myElement[i].style.backgroundColor = "#F6F6F6";
+};
+      console.log("edit");
+     }else{
+      item.contentEditable = false;
+      for (let i = 0; i < myElement.length; i++) {
+  myElement[i].style.backgroundColor = "#EEE";
+};
+      console.log("non edit");
+     }
+  });
+}
+/*************************************************************** LOCK *******************************************************/
+               
+</script>
+  </body>
+</html>
